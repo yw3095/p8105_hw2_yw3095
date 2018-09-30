@@ -1,0 +1,10 @@
+---
+title: "p8105_hw2_yw3095"
+author: "Yixuan Wang"
+date: "September 30, 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
