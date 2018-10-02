@@ -78,7 +78,6 @@ pre_2016 =
                       col_names = TRUE) %>%
   janitor::clean_names() %>% 
   mutate(year = 2016)
-pre_2016
 ```
 *   Read and clean precipitation data for 2017
 ```{r}
@@ -89,5 +88,12 @@ pre_2017 =
                       col_names = TRUE) %>%
   janitor::clean_names() %>% 
   mutate(year = 2017)
-pre_2017
 ```
+*   Combine the datasets
+```{r}
+pre_comb = 
+  bind_rows(pre_2016, pre_2017) %>%
+  mutate(month = month.name[month])
+```
+There are `r nrow(hw2_wheel)` observations in the Mr. Trash Wheel dataset, and the key variables are ???. There are`r nrow(pre_comb)` observations in the combined precipitatin data for 2016 and 2017, and the key variable is ???.
+The total precipitation in 2017 is`r sum(pre_2017$total)`,the median number is `r median(mutate(select(filter(hw2_wheel, year == '2016'),sports_balls))`.
