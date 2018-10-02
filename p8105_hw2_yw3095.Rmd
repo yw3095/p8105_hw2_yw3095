@@ -6,5 +6,88 @@ output: github_document
 ---
 
 ```{r setup, include=FALSE}
+getwd()
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+```
+##Problem 1
+This problem focuses on NYC Transit data
+
+*   Read and clean the data
+```{r}
+hw2_transit = 
+  read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", 
+           col_names = TRUE) %>% 
+  janitor::clean_names() %>% 
+  gather(key = route_number, 
+         value = route_name, 
+         route1:route11) %>% 
+  select(line, 
+         station_name,
+         station_latitude,
+         station_longitude,
+         route_number, 
+         route_name, 
+         entry, 
+         vending, 
+         entrance_type, 
+         ada) %>% 
+  mutate(entry = ifelse(entry == "YES", yes = TRUE, no = FALSE))
+head(hw2_transit)
+```
+**steps to clean the data**
+
+describe what happened
+
+**questions**
+
+* How many distinct stations are there?
+
+    * There are `r count(distinct(hw2_transit, line, station_name))` distinct stations.
+
+* How many distinct stations are ADA compliant?
+
+    * There are `r count(filter(hw2_transit, ada == TRUE) %>% distinct(.data., line, station_name))` distinct stations are ADA compliant.
+
+* What proportion of station entrances / exits without vending allow entrance?
+
+    *   `r round (count(filter(hw2_transit, ada == TRUE) %>% distinct(.data., line, station_name))/count(distinct(hw2_transit, line, station_name))*100, 2)`% of station entrances / exits without vending allow entrance.
+
+##Problem 2
+This problem focuses on the Mr. Trash Wheel dataset.
+
+*   Read and clean the data  total!!!
+```{r}
+hw2_wheel = 
+  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
+             range = cell_cols(1:14),
+             col_names = TRUE) %>% 
+  janitor::clean_names() %>% 
+  filter(date != 0) %>% 
+  mutate(sports_balls = as.integer(round(sports_balls)))
+hw2_wheel
+```
+*   Read and clean precipitation data for 2016
+```{r}
+pre_2016 = 
+  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
+                      sheet = 4,
+                      range = cell_rows(2:14),
+                      col_names = TRUE) %>%
+  janitor::clean_names() %>% 
+  mutate(year = 2016)
+pre_2016
+```
+*   Read and clean precipitation data for 2017
+```{r}
+pre_2017 = 
+  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
+                      sheet = 3,
+                      range = cell_rows(2:10),
+                      col_names = TRUE) %>%
+  janitor::clean_names() %>% 
+  mutate(year = 2017)
+pre_2017
 ```
