@@ -7,7 +7,10 @@ output: github_document
 
 ```{r setup, include=FALSE}
 getwd()
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 6,
+                      fig.asp = .6,
+                      out.width = "90%")
 
 library(tidyverse)
 library(readxl)
@@ -24,18 +27,16 @@ hw2_transit =
   gather(key = route_number, 
          value = route_name, 
          route1:route11) %>% 
-  select(line, 
-         station_name,
-         station_latitude,
-         station_longitude,
+  select(line:station_longitude,
          route_number, 
          route_name, 
          entry, 
          vending, 
          entrance_type, 
-         ada) %>% 
+         ada) %>%
+  filter(!is.na(route_name)) %>% 
   mutate(entry = ifelse(entry == "YES", yes = TRUE, no = FALSE))
-head(hw2_transit)
+hw2_transit
 ```
 **steps to clean the data**
 
@@ -53,12 +54,16 @@ describe what happened
 
 * What proportion of station entrances / exits without vending allow entrance?
 
-    *   `r round (count(filter(hw2_transit, ada == TRUE) %>% distinct(.data., line, station_name))/count(distinct(hw2_transit, line, station_name))*100, 2)`% of station entrances / exits without vending allow entrance.
+    *   `r round(count(distinct(filter(hw2_transit, vending == "NO" & entry == TRUE), line, station_name))/count(distinct(filter(hw2_transit, vending == "NO"), line, station_name))*100, 2)`% of station entrances / exits without vending allow entrance.
+
+* How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+    * There are `r count(distinct(filter(hw2_transit, route_name == "A"), line, station_name))` distinct stations serve the A train. Of the stations that serve the A train, `r count(distinct(filter(hw2_transit, route_name == "A" & ada == TRUE), line, station_name))` stations are ADA compliant.
 
 ##Problem 2
 This problem focuses on the Mr. Trash Wheel dataset.
 
-*   Read and clean the data  total!!!
+*   Read and clean the data
 ```{r}
 hw2_wheel = 
   read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
@@ -78,6 +83,7 @@ pre_2016 =
                       col_names = TRUE) %>%
   janitor::clean_names() %>% 
   mutate(year = 2016)
+pre_2016
 ```
 *   Read and clean precipitation data for 2017
 ```{r}
@@ -94,6 +100,84 @@ pre_2017 =
 pre_comb = 
   bind_rows(pre_2016, pre_2017) %>%
   mutate(month = month.name[month])
+pre_comb
 ```
-There are `r nrow(hw2_wheel)` observations in the Mr. Trash Wheel dataset, and the key variables are ???. There are`r nrow(pre_comb)` observations in the combined precipitatin data for 2016 and 2017, and the key variable is ???.
-The total precipitation in 2017 is`r sum(pre_2017$total)`,the median number is `r median(mutate(select(filter(hw2_wheel, year == '2016'),sports_balls))`.
+**summary**
+
+There are `r nrow(hw2_wheel)` observations in the Mr. Trash Wheel dataset, and the key variables are ???. There are `r nrow(pre_comb)` observations in the combined precipitatin data for 2016 and 2017, and the key variable is ???.
+
+```{r}
+filter(hw2_wheel, year == 2016, !is.na(sports_balls)) %>% 
+  pull(sports_balls) %>% 
+  median()
+```
+The total precipitation in 2017 is `r sum(pre_2017$total)`. The median number of sports balls in a dumpster in 2016 is 26.
+
+
+##problem 3
+upload the dataset from the p8105.datasets package
+
+```{r}
+devtools::install_github("p8105/p8105.datasets")
+library(p8105.datasets)
+```
+*   Read and clean the data  maybe select again to adjust the order!!
+```{r}
+hw2_brfss = brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health") %>% 
+  separate(locationdesc, into = c("remove", "location_county"), sep = " - ") %>% 
+  rename(location_state = locationabbr) %>%
+  select(year, location_state, location_county, response, data_value) %>% 
+  spread(key = response, value = data_value) %>%
+  janitor::clean_names() %>%
+  select(year:location_county, excellent, very_good, good, fair, poor) %>% 
+  mutate(above_good = excellent + very_good) 
+hw2_brfss
+```
+**Questions**
+```{r ??????}
+count(hw2_brfss, location_state) %>% 
+  arrange(-n) %>% 
+  head(1)
+```
+*   There are `r count(distinct(hw2_brfss, location_state, location_county))` unique locations are included in the dataset. There are `r count(distinct(hw2_brfss, location_state))` states in the dataset. Every state is represented. NJ is observed `r max(table(hw2_brfss$location_state))` times, which is the most.
+
+
+*   In 2002, what is the median of the “Excellent” response value? 
+
+    * In 2002, the median of the "Excellent" response value is 23.6.
+```{r}
+filter(hw2_brfss, year == 2002, !is.na(excellent)) %>% 
+  pull(excellent) %>% 
+  median()
+```
+*    Make a histogram of “Excellent” response values in the year 2002.
+```{r}
+res_2002 = filter(hw2_brfss, year == 2002) %>% 
+            ggplot(aes(x = excellent)) + 
+            geom_histogram() + 
+            labs(
+    title = "“Excellent” response distribution in the year 2002",
+    x = "excellent reponse proportion",
+    y = "count") + 
+            scale_x_continuous(breaks = c(20, 30, 40), 
+                     labels = c("20%", "30", "40")) 
+res_2002
+```
+*   Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+```{r}
+res_all = filter(hw2_brfss, location_county == "New York County" | location_county == "Queens County") %>% 
+       ggplot(aes(x = year, y = excellent)) + 
+            geom_point(aes(color = location_county)) +
+            labs(
+    title = "“Excellent” response proportion in the year 2002 
+    in New York County and Queens County",
+    x = "year",
+    y = "proportion")  
+res_all
+```
+
+ 
+
+
