@@ -19,7 +19,7 @@ library(readxl)
 This problem focuses on NYC Transit data
 
 *   Read and clean the data
-```{r}
+```{r problem1, message = FALSE}
 hw2_transit = 
   read_csv("./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", 
            col_names = TRUE) %>% 
@@ -36,13 +36,28 @@ hw2_transit =
          ada) %>%
   filter(!is.na(route_name)) %>% 
   mutate(entry = ifelse(entry == "YES", yes = TRUE, no = FALSE))
-hw2_transit
 ```
-**steps to clean the data**
+**Summary of the Dataset**
 
-describe what happened
+*   The dataset contains 10 variables: line, station_name, station_latitude, station_longitude, route_number, route_name, entry, vending, entrance_type, and ada.
 
-**questions**
+*   Steps to clean the data:
+
+1. Using janitor:clean_names to transfer all variable names into lowercase and omit the whitespace in variable name.
+
+1. Using "gather" function to make the data tidy. The route_number is spread across 11 columns in the original dataset, which correspond to 11 observation times. By gather function, we setting key = route_number, value = route_name can fix this problem.
+
+1. Using "select" function to select the variable we want to be shown in the cleaned dataset.
+
+1. Using "filter" function to delete the records without a route_name. Because not all of the stations have 11 routes. After we gathering the route_number variable, there would be many observations with an "N/A" value in the route_name variable. We choose to use filter to delete these meaningless records.
+
+1. Using "mutate" function to convert the entry variable from character (YES vs NO) to a logical variable.
+
+*   The dataset is a  `r nrow(hw2_transit)` x `r ncol(hw2_transit)` table.
+
+*   These data are tidy after using "clean_names", "gather", "select", "filter" functions to clean the data.
+
+**Questions**
 
 * How many distinct stations are there?
 
@@ -64,49 +79,46 @@ describe what happened
 This problem focuses on the Mr. Trash Wheel dataset.
 
 *   Read and clean the data
-```{r}
+```{r problem2.1}
 hw2_wheel = 
-  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
+  read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", 
              range = cell_cols(1:14),
              col_names = TRUE) %>% 
   janitor::clean_names() %>% 
   filter(date != 0) %>% 
   mutate(sports_balls = as.integer(round(sports_balls)))
-hw2_wheel
 ```
 *   Read and clean precipitation data for 2016
-```{r}
+```{r problem2.2}
 pre_2016 = 
-  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
-                      sheet = 4,
+  read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", 
+                      sheet = 5,
                       range = cell_rows(2:14),
                       col_names = TRUE) %>%
   janitor::clean_names() %>% 
   mutate(year = 2016)
-pre_2016
 ```
 *   Read and clean precipitation data for 2017
-```{r}
+```{r problem2.3}
 pre_2017 = 
-  read_excel("./data/HealthyHarborWaterWheelTotals2017-9-26.xlsx", 
-                      sheet = 3,
-                      range = cell_rows(2:10),
+  read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", 
+                      sheet = 4,
+                      range = cell_rows(2:14),
                       col_names = TRUE) %>%
   janitor::clean_names() %>% 
   mutate(year = 2017)
 ```
 *   Combine the datasets
-```{r}
+```{r problem2.4}
 pre_comb = 
   bind_rows(pre_2016, pre_2017) %>%
   mutate(month = month.name[month])
-pre_comb
 ```
-**summary**
+**Summary**
 
-There are `r nrow(hw2_wheel)` observations in the Mr. Trash Wheel dataset, and the key variables are ???. There are `r nrow(pre_comb)` observations in the combined precipitatin data for 2016 and 2017, and the key variable is ???.
+There are `r nrow(hw2_wheel)` observations in the Mr. Trash Wheel dataset, and the key variables are weight_tons and homes_powered. There are `r nrow(pre_comb)` observations in the combined precipitatin data for 2016 and 2017, and the key variable is Total.
 
-```{r}
+```{r problem2.5}
 filter(hw2_wheel, year == 2016, !is.na(sports_balls)) %>% 
   pull(sports_balls) %>% 
   median()
@@ -114,15 +126,15 @@ filter(hw2_wheel, year == 2016, !is.na(sports_balls)) %>%
 The total precipitation in 2017 is `r sum(pre_2017$total)`. The median number of sports balls in a dumpster in 2016 is 26.
 
 
-##problem 3
-upload the dataset from the p8105.datasets package
+##Problem 3
+* Upload the dataset from the p8105.datasets package
 
-```{r}
+```{r 3.1, message=FALSE}
 devtools::install_github("p8105/p8105.datasets")
 library(p8105.datasets)
 ```
-*   Read and clean the data  maybe select again to adjust the order!!
-```{r}
+*   Read and clean the data 
+```{r problem3.2}
 hw2_brfss = brfss_smart2010 %>% 
   janitor::clean_names() %>% 
   filter(topic == "Overall Health") %>% 
@@ -133,27 +145,26 @@ hw2_brfss = brfss_smart2010 %>%
   janitor::clean_names() %>%
   select(year:location_county, excellent, very_good, good, fair, poor) %>% 
   mutate(above_good = excellent + very_good) 
-hw2_brfss
 ```
 **Questions**
-```{r ??????}
+```{r problem3.3}
 count(hw2_brfss, location_state) %>% 
   arrange(-n) %>% 
   head(1)
 ```
-*   There are `r count(distinct(hw2_brfss, location_state, location_county))` unique locations are included in the dataset. There are `r count(distinct(hw2_brfss, location_state))` states in the dataset. Every state is represented. NJ is observed `r max(table(hw2_brfss$location_state))` times, which is the most.
+*   There are `r count(distinct(hw2_brfss, location_state, location_county))` unique locations are included in the dataset. There are `r count(distinct(hw2_brfss, location_state))` states in the dataset including the federal district. Every state is represented. NJ is observed `r max(table(hw2_brfss$location_state))` times, which is the most.
 
 
 *   In 2002, what is the median of the “Excellent” response value? 
 
     * In 2002, the median of the "Excellent" response value is 23.6.
-```{r}
+```{r problem3.4}
 filter(hw2_brfss, year == 2002, !is.na(excellent)) %>% 
   pull(excellent) %>% 
   median()
 ```
 *    Make a histogram of “Excellent” response values in the year 2002.
-```{r}
+```{r plot1, message=FALSE}
 res_2002 = filter(hw2_brfss, year == 2002) %>% 
             ggplot(aes(x = excellent)) + 
             geom_histogram() + 
@@ -165,8 +176,9 @@ res_2002 = filter(hw2_brfss, year == 2002) %>%
                      labels = c("20%", "30", "40")) 
 res_2002
 ```
+
 *   Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
-```{r}
+```{r plot2}
 res_all = filter(hw2_brfss, location_county == "New York County" | location_county == "Queens County") %>% 
        ggplot(aes(x = year, y = excellent)) + 
             geom_point(aes(color = location_county)) +
